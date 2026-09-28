@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build zip assets
+        run: |
+          mkdir -p build/3 build/4
+          cp script-loader-3.gd build/3/script-loader.gd
+          cp script-loader-4.gd build/4/script-loader.gd
+          (cd build/3 && zip "$GITHUB_WORKSPACE/godot-3.zip" script-loader.gd)
+          (cd build/4 && zip "$GITHUB_WORKSPACE/godot-4.zip" script-loader.gd)
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release create "$TAG" \
+            godot-3.zip \
+            godot-4.zip \
+            --title "Godot Loader $TAG" \
